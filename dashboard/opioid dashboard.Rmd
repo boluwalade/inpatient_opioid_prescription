@@ -1,0 +1,186 @@
+---
+title: "Safe Use of Opioids - Concurrent Prescribing"
+runtime: shiny
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: rows
+    vertical_layout: fill
+    theme: yeti
+---
+
+```{r setup, include=FALSE}
+library(flexdashboard)
+library(tidyverse)
+library(qicharts2)
+library(lubridate)
+library(highcharter)
+```
+
+
+
+```{r load-data}
+
+cohort <- read_csv("cohort.csv") |> janitor::clean_names()
+demographics <- read_csv("demographics.csv") |> janitor::clean_names()
+readmissions <- read_csv("readmissions.csv") |> janitor::clean_names()
+medications <- read_csv("medications.csv") |> janitor::clean_names()
+
+
+cohort <- cohort |> 
+  mutate(race_ethnicity = case_when(
+    str_detect(ethnicity,"WHITE") ~ "White",
+    str_detect(ethnicity,"BLACK|AFRICAN") ~ "Black or African American",
+    str_detect(ethnicity,"HISPANIC|LATINO") ~ "Hispanic/Latino",
+    str_detect(ethnicity,"ASIAN") ~ "Asian",
+    str_detect(ethnicity,"DECLINED") ~ "Declined to Answer",
+    str_detect(ethnicity,"OTHER") ~ "Other",
+    T ~ "Unknown"
+  ),
+  multiple_meds_at_discharge = case_when(n_opioid_at_discharge > 1 ~ 1,
+                                                n_opioid_at_discharge + n_benzo_at_discharge > 1 ~ 1,
+                                                T ~ 0),
+         year_of_discharge = floor_date(dischtime,"year")
+)
+
+
+readmissions_df <- readmissions |> 
+  inner_join(cohort,by = c("hadm_id","subject_id")) |>
+  group_by(year_of_discharge) |>
+  summarise(
+    readmissions = sum(readmission_ind),
+    readmission_30_days = sum(readmission_30_days),
+    readmission_60_days = sum(readmission_60_days),
+    readmission_90_days = sum(readmission_90_days),
+    n = n()
+  )
+
+
+multiple_meds_discharged <- cohort |> 
+  group_by(year_of_discharge) |> 
+  summarise(
+    multiple_meds_at_discharge = sum(multiple_meds_at_discharge),
+    n = n()
+  )
+
+```
+
+Demographics
+======================================================================
+
+Column {data-width=650}
+-----------------------------------------------------------------------
+
+### Race and Ethnicity
+
+```{r race}
+paretochart(cohort$race_ethnicity,
+            title = 'Pareto Chart of Race/Ethnicity',x.angle = 90)
+
+```
+
+### Gender
+```{r age}
+demographics |> count(gender) |> 
+  hchart('column', hcaes(x = gender, y = n)) |> 
+   hc_tooltip(formatter = JS("function(){
+                  return (' #:' + this.point.n)
+                  }")) |> 
+    hc_title(text = "Breakdown by Gender") |> 
+  hc_xAxis(title = list(text = "Gender")) |> 
+  hc_yAxis(title = list(text = ""))
+```
+
+Count of Opioid at Discharge {data-navmenu="Process Measures"}
+==================================================
+
+Column {data-width=350}
+-----------------------------------------------------------------------
+
+### Count of Opioid at Discharge
+
+```{r}
+qic(year_of_discharge, n_opioid_at_discharge,
+    data  = cohort,
+    chart = 'xbar',
+    title = 'Average Count of Opioid Medications at Discharge {Xbar Chart}',
+    ylab  = '# Count',
+    xlab  = 'Year',
+    show.grid = T,
+    y.neg = F
+    )
+
+
+```
+
+Count of Benzodiazepine at Discharge {data-navmenu="Process Measures"}
+==================================================
+
+### Count of Benzodiazepine at Discharge
+```{r}
+
+qic(year_of_discharge, n_benzo_at_discharge,
+    data  = cohort,
+    chart = 'xbar',
+    title = 'Average Count of Benzodiazepine Medications at Discharge {Xbar Chart}',
+    ylab  = '# Count',
+    xlab  = 'Year',
+    show.grid = T, 
+    y.neg = F)
+
+```
+
+Rate of Opioid and Benzodiazepine at Discharge {data-navmenu="Process Measures"}
+==================================================
+
+### Rate of Opioid and Benzodiazepine at Discharge
+```{r}
+
+qic(year_of_discharge, multiple_meds_at_discharge, n,
+    data      = multiple_meds_discharged,
+    chart     = 'p',
+    y.percent = TRUE,
+    title     = 'Discharged With Multiple Medications {P chart}',
+    subtitle = " Patients with more than one opioids OR at least one Opioid and One Benzodiazepine at discharge",
+    show.grid = T,
+    ylab      = NULL,
+    xlab      = 'Year'
+    )
+
+```
+
+Outcome Measures
+=========================================================
+
+### Readmissions Within 30 Days
+```{r}
+
+# qic(year_of_discharge, readmissions, n,
+#     data      = readmissions_df,
+#     chart     = 'p',
+#     y.percent = TRUE,
+#     title     = 'Readmissions',
+#     ylab      = NULL,
+#     xlab      = 'Month'
+# )
+
+qic(year_of_discharge, readmission_30_days, n,
+    data      = readmissions_df,
+    chart     = 'p',
+    y.percent = TRUE,
+    title     = 'Readmissions Within 30 days {P Chart}',
+    ylab      = NULL,
+    show.grid = T,
+    xlab      = 'Year'
+)
+
+# qic(year_of_discharge, readmission_60_days, n,
+#     data      = readmissions_df,
+#     chart     = 'p',
+#     y.percent = TRUE,
+#     title     = 'Readmissions within 60 days',
+#     ylab      = NULL,
+#     xlab      = 'Month'
+# )
+
+```
+
