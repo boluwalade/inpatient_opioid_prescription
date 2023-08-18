@@ -5,7 +5,7 @@ output:
   flexdashboard::flex_dashboard:
     orientation: rows
     vertical_layout: fill
-    theme: yeti
+    theme: cerulean
 ---
 
 ```{r setup, include=FALSE}
@@ -14,6 +14,8 @@ library(tidyverse)
 library(qicharts2)
 library(lubridate)
 library(highcharter)
+
+
 ```
 
 
@@ -64,10 +66,31 @@ multiple_meds_discharged <- cohort |>
 
 ```
 
-Demographics
+Patient Details
 ======================================================================
 
-Column {data-width=650}
+Row 
+-----------------------------------------------------------------------
+### Unique Patient Admissions
+```{r }
+
+valueBox(value = nrow(cohort),color = "primary",icon = "fa-hospital-o")
+```
+
+### 30 days Readmissions  
+```{r }
+
+valueBox(value = sum(readmissions_df$readmission_30_days),color = "info", icon = "fa-ambulance")
+```
+
+### 60 days Readmissions 
+```{r }
+
+renderValueBox(valueBox(value = sum(readmissions_df$readmission_60_days),color = "success", icon = "fa-h-square"))
+```
+
+
+Row {data-width=650}
 -----------------------------------------------------------------------
 
 ### Race and Ethnicity
@@ -93,16 +116,16 @@ demographics |> count(gender) |>
 Count of Opioid at Discharge {data-navmenu="Process Measures"}
 ==================================================
 
-Column {data-width=350}
+Row 
 -----------------------------------------------------------------------
 
-### Count of Opioid at Discharge
 
+### Average Count of Opioid Medications at Discharge {Xbar Chart}
 ```{r}
 qic(year_of_discharge, n_opioid_at_discharge,
     data  = cohort,
     chart = 'xbar',
-    title = 'Average Count of Opioid Medications at Discharge {Xbar Chart}',
+    title = "Average Count of Opioid Medications at Discharge {Xbar Chart}",
     ylab  = '# Count',
     xlab  = 'Year',
     show.grid = T,
@@ -112,16 +135,34 @@ qic(year_of_discharge, n_opioid_at_discharge,
 
 ```
 
+
+### Average Count of Opioid Medications at Discharge {MR Chart}
+```{r}
+qic(year_of_discharge, n_opioid_at_discharge,
+    data  = cohort,
+    chart = 'mr',
+    title = "Average Count of Opioid Medications at Discharge {MR Chart}",
+    ylab  = '# Count',
+    xlab  = 'Year',
+    show.grid = T,
+    y.neg = F
+    )
+
+```
+
 Count of Benzodiazepine at Discharge {data-navmenu="Process Measures"}
 ==================================================
 
-### Count of Benzodiazepine at Discharge
+Row 
+-----------------------------------------------------------------------
+
+### Average Count of Benzodiazepine Medications at Discharge {Xbar Chart}
 ```{r}
 
 qic(year_of_discharge, n_benzo_at_discharge,
     data  = cohort,
     chart = 'xbar',
-    title = 'Average Count of Benzodiazepine Medications at Discharge {Xbar Chart}',
+    title = "Average Count of Benzodiazepine Medications at Discharge {Xbar Chart}",
     ylab  = '# Count',
     xlab  = 'Year',
     show.grid = T, 
@@ -129,10 +170,26 @@ qic(year_of_discharge, n_benzo_at_discharge,
 
 ```
 
-Rate of Opioid and Benzodiazepine at Discharge {data-navmenu="Process Measures"}
+
+### Average Count of Benzodiazepine Medications at Discharge {MR Chart}
+```{r}
+
+qic(year_of_discharge, n_benzo_at_discharge,
+    data  = cohort,
+    chart = 'mr',
+    title = "Average Count of Benzodiazepine Medications at Discharge {MR Chart}",
+    ylab  = '# Count',
+    xlab  = 'Year',
+    show.grid = T, 
+    y.neg = F)
+
+```
+
+
+Rate of Multiple Medications at Discharge {data-navmenu="Process Measures"}
 ==================================================
 
-### Rate of Opioid and Benzodiazepine at Discharge
+### Rate of Multiple Medications at Discharge
 ```{r}
 
 qic(year_of_discharge, multiple_meds_at_discharge, n,
@@ -140,7 +197,7 @@ qic(year_of_discharge, multiple_meds_at_discharge, n,
     chart     = 'p',
     y.percent = TRUE,
     title     = 'Discharged With Multiple Medications {P chart}',
-    subtitle = " Patients with more than one opioids OR at least one Opioid and One Benzodiazepine at discharge",
+    caption = " Patients with more than one opioids OR \nat least one Opioid and One Benzodiazepine at discharge",
     show.grid = T,
     ylab      = NULL,
     xlab      = 'Year'
@@ -154,14 +211,6 @@ Outcome Measures
 ### Readmissions Within 30 Days
 ```{r}
 
-# qic(year_of_discharge, readmissions, n,
-#     data      = readmissions_df,
-#     chart     = 'p',
-#     y.percent = TRUE,
-#     title     = 'Readmissions',
-#     ylab      = NULL,
-#     xlab      = 'Month'
-# )
 
 qic(year_of_discharge, readmission_30_days, n,
     data      = readmissions_df,
@@ -173,14 +222,7 @@ qic(year_of_discharge, readmission_30_days, n,
     xlab      = 'Year'
 )
 
-# qic(year_of_discharge, readmission_60_days, n,
-#     data      = readmissions_df,
-#     chart     = 'p',
-#     y.percent = TRUE,
-#     title     = 'Readmissions within 60 days',
-#     ylab      = NULL,
-#     xlab      = 'Month'
-# )
 
 ```
+
 
